@@ -1,0 +1,180 @@
+ 1   <!DOCTYPE html>
+ 2
+ 3   <!-- Fig. 19.20: dynamicForm.php -->
+ 4   <!-- Dynamic form. -->
+ 5   <html>
+ 6      <head>
+ 7         <meta charset = "utf-8">
+ 8         <title>Registration Form</title>
+ 9         <style type = "text/css">
+10            p       { margin: 0px; }
+11            .error  { color: red }
+12            p.head  { font-weight: bold; margin-top: 10px; }
+13            label   { width: 5em; float: left; }
+14         </style>
+15      </head>
+16      <body>
+17         <?php
+18            // variables used in script
+19            $fname = isset($_POST[ "fname" ]) ? $_POST[ "fname" ] : "";
+20            $lname = isset($_POST[ "lname" ]) ? $_POST[ "lname" ] : "";
+21            $email = isset($_POST[ "email" ]) ? $_POST[ "email" ] : "";
+22            $phone = isset($_POST[ "phone" ]) ? $_POST[ "phone" ] : "";
+23            $book = isset($_POST[ "book" ]) ? $_POST[ "book" ] : "";   
+24            $os = isset($_POST[ "os" ]) ? $_POST[ "os" ] : "";         
+25            $iserror = false;
+26            $formerrors =
+27               array( "fnameerror" => false, "lnameerror" => false,
+28                  "emailerror" => false, "phoneerror" => false );
+29
+30            // array of book titles
+31            $booklist = array( "Internet and WWW How to Program",
+32               "C++ How to Program", "Java How to Program",
+33               "Visual Basic How to Program" );
+34
+35            // array of possible operating systems
+36            $systemlist = array( "Windows", "Mac OS X", "Linux", "Other" );
+37
+38            // array of name values for the text input fields
+39            $inputlist = array( "fname" => "First Name",
+40               "lname" => "Last Name", "email" => "Email",
+41               "phone" => "Phone" );
+42
+43            // ensure that all fields have been filled in correctly
+44            if ( isset( $_POST["submit"] ) )
+45            {
+46               if ( $fname == "" )
+47               {
+48                  $formerrors[ "fnameerror" ] = true;
+49                  $iserror = true;
+50               } // end if
+51
+52               if ( $lname == "" )
+53               {
+54                  $formerrors[ "lnameerror" ] = true;
+55                  $iserror = true;
+56               } // end if
+57
+58               if ( $email == "" )
+59               {
+60                  $formerrors[ "emailerror" ] = true;
+61                  $iserror = true;
+62               } // end if
+63
+64               if ( !preg_match( "/^\([0-9]{3}\) [0-9]{3}-[0-9]{4}$/",
+65                  $phone ) )
+66               {
+67                  $formerrors[ "phoneerror" ] = true;
+68                  $iserror = true;
+69               } // end if
+70
+71               if ( !$iserror )
+72               {
+73                  // build INSERT query
+74                  $query = "INSERT INTO contacts " .                     
+75                     "( LastName, FirstName, Email, Phone, Book, OS ) " .
+76                     "VALUES ( '$lname', '$fname', '$email', " .         
+77                     "'" . mysql_real_escape_string( $phone ) .          
+78                     "', '$book', '$os' )";                              
+79
+80                  // Connect to MySQL
+81                  if ( !( $database = mysql_connect( "localhost",
+82                     "iw3htp", "password" ) ) )
+83                     die( "<p>Could not connect to database</p>" );
+84
+85                  // open MailingList database
+86                  if ( !mysql_select_db( "MailingList", $database ) )
+87                     die( "<p>Could not open MailingList database</p>" );
+88
+89                  // execute query in MailingList database
+90                  if ( !( $result = mysql_query( $query, $database ) ) )
+91                  {
+92                     print( "<p>Could not execute query!</p>" );
+93                     die( mysql_error() );
+94                  } // end if
+95
+96                  mysql_close( $database );
+97
+98                  print( "<p>Hi $fname. Thank you for completing the survey.
+99                        You have been added to the $book mailing list.</p>
+100                    <p class = 'head'>The following information has been
+101                       saved in our database:</p>
+102                    <p>Name: $fname $lname</p>
+103                    <p>Email: $email</p>
+104                    <p>Phone: $phone</p>
+105                    <p>OS: $os</p>
+106                    <p><a href = 'formDatabase.php'>Click here to view
+107                       entire database.</a></p>
+108                    <p class = 'head'>This is only a sample form.
+109                       You have not been added to a mailing list.</p>
+110                    </body></html>" );
+111                 die(); // finish the page
+112              } // end if
+113           } // end if
+114
+115           print( "<h1>Sample Registration Form</h1>
+116              <p>Please fill in all fields and click Register.</p>" );
+117
+118           if ( $iserror )
+119           {
+120              print( "<p class = 'error'>Fields with * need to be filled
+121                 in properly.</p>" );
+122           } // end if
+123
+124           print( "<!-- post form data to dynamicForm.php -->
+125              <form method = 'post' action = 'dynamicForm.php'>
+126              <h2>User Information</h2>
+127
+128              <!-- create four text boxes for user input -->" );
+129           foreach ( $inputlist as $inputname => $inputalt )
+130           {
+131              print( "<div><label>$inputalt:</label><input type = 'text'
+132                 name = '$inputname' value = '" . $$inputname . "'>" );
+133
+134              if ( $formerrors[ ( $inputname )."error" ] == true )
+135                 print( "<span class = 'error'>*</span>" );       
+136
+137              print( "</div>" );
+138           } // end foreach
+139
+140           if ( $formerrors[ "phoneerror" ] )
+141              print( "<p class = 'error'>Must be in the form
+142                 (555)555-5555" );
+143
+144           print( "<h2>Publications</h2>
+145              <p>Which book would you like information about?</p>
+146
+147              <!-- create drop-down list containing book names -->
+148              <select name = 'book'>" );
+149
+150           foreach ( $booklist as $currbook )
+151           {
+152              print( "<option" .
+153                 ($currbook == $book ? " selected>" : ">") .
+154                 $currbook . "</option>" );
+155           } // end foreach
+156
+157           print( "</select>
+158              <h2>Operating System</h2>
+159              <p>Which operating system do you use?</p>
+160
+161              <!-- create five radio buttons -->" );
+162
+163           $counter = 0;
+164
+165           foreach ( $systemlist as $currsystem )
+166           {
+167              print( "<input type = 'radio' name = 'os'
+168                 value = '$currsystem' " );
+169
+170              if ( ( !$os && $counter == 0 ) || ( $currsystem == $os ) )
+171                 print( "checked" );                                    
+172
+173              print( ">$currsystem" );
+174              ++$counter;
+175           } // end foreach
+176
+177           print( "<!-- create a submit button -->
+178              <p class = 'head'><input type = 'submit' name = 'submit'
+179              value = 'Register'></p></form></body></html>" );
+180     ?><!-- end PHP script -->
